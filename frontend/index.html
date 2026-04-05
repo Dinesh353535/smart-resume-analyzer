@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ResumeAI — Smart Resume Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #080a0f; --bg2: #0e1118; --bg3: #13161f;
+      --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+      --accent: #7B6EF6; --accent2: #5B4FD4;
+      --green: #2DD4A0; --red: #F06C6C; --amber: #F5A623; --blue: #5BA4F5;
+      --text: #F0EEF8; --text2: rgba(240,238,248,0.5); --text3: rgba(240,238,248,0.25);
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 36px; height: 58px; border-bottom: 1px solid var(--border);
+      background: rgba(8,10,15,0.9); backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .logo-sq { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #fff; }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { font-size: 13px; padding: 6px 16px; border-radius: 6px; cursor: pointer; color: var(--text2); border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+    .nav-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-tab.active { color: var(--text); background: rgba(123,110,246,0.15); }
+    .beta { font-size: 10px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+    .page { display: none; } .page.active { display: block; }
+    .hero { text-align: center; padding: 56px 24px 40px; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(123,110,246,0.12) 0%, transparent 70%); }
+    .hero-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--accent); letter-spacing: 0.05em; background: rgba(123,110,246,0.1); border: 1px solid rgba(123,110,246,0.2); padding: 5px 14px; border-radius: 20px; margin-bottom: 20px; }
+    .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+    .hero h1 { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; line-height: 1.15; margin-bottom: 14px; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p { font-size: 14px; color: var(--text2); max-width: 460px; margin: 0 auto; line-height: 1.7; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 940px; margin: 0 auto; padding: 0 24px 48px; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; overflow: hidden; }
+    .card-head { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 18px; }
+    .drop-zone { border: 1.5px dashed rgba(123,110,246,0.25); border-radius: 10px; padding: 30px 20px; text-align: center; cursor: pointer; background: rgba(123,110,246,0.03); transition: all 0.2s; margin-bottom: 14px; }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(123,110,246,0.07); }
+    .drop-icon { font-size: 30px; margin-bottom: 10px; }
+    .drop-zone h3 { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .drop-zone p { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+    .pick-btn { background: var(--accent); color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+    .pick-btn:hover { background: var(--accent2); }
+    #file-inp { display: none; }
+    .file-chip { display: none; align-items: center; gap: 10px; background: rgba(123,110,246,0.08); border: 1px solid rgba(123,110,246,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
+    .file-chip.show { display: flex; }
+    .chip-name { flex: 1; font-size: 13px; color: var(--accent); font-weight: 500; }
+    .chip-rm { cursor: pointer; color: var(--text3); font-size: 16px; line-height: 1; }
+    .chip-rm:hover { color: var(--red); }
+    label.jd-lbl { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+    textarea { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12px; color: var(--text2); resize: none; height: 100px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s; margin-bottom: 14px; }
+    textarea:focus { outline: none; border-color: rgba(123,110,246,0.45); }
+    textarea::placeholder { color: var(--text3); }
+    .go-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Syne', sans-serif; letter-spacing: 0.03em; transition: background 0.2s, transform 0.1s; }
+    .go-btn:hover { background: var(--accent2); } .go-btn:active { transform: scale(0.98); } .go-btn:disabled { background: rgba(123,110,246,0.25); cursor: not-allowed; }
+    .loader { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 48px; gap: 14px; }
+    .loader.show { display: flex; }
+    .spin { width: 36px; height: 36px; border: 3px solid rgba(123,110,246,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { font-size: 13px; color: var(--text2); }
+    .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; gap: 10px; text-align: center; }
+    .empty-ico { font-size: 38px; opacity: 0.2; }
+    .empty p { font-size: 13px; color: var(--text3); line-height: 1.6; }
+    .results { display: none; } .results.show { display: block; }
+    .score-band { display: flex; align-items: center; gap: 18px; background: rgba(123,110,246,0.07); border: 1px solid rgba(123,110,246,0.14); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .ring-wrap { position: relative; width: 78px; height: 78px; flex-shrink: 0; }
+    .ring-wrap svg { width: 78px; height: 78px; transform: rotate(-90deg); }
+    .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ring-num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; line-height: 1; }
+    .ring-den { font-size: 10px; color: var(--text3); }
+    .score-info h2 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .score-info p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .stat { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .stat-lbl { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+    .kw-block { margin-bottom: 12px; }
+    .kw-head { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 7px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+    .tg { background: rgba(45,212,160,0.1); color: var(--green); border: 1px solid rgba(45,212,160,0.18); }
+    .tr { background: rgba(240,108,108,0.1); color: var(--red); border: 1px solid rgba(240,108,108,0.18); }
+    .bars { margin-top: 4px; }
+    .brow { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+    .blbl { font-size: 11px; color: var(--text2); width: 86px; flex-shrink: 0; }
+    .btrk { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+    .bfil { height: 4px; border-radius: 2px; width: 0; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+    .bpct { font-size: 10px; color: var(--text3); width: 26px; text-align: right; }
+    .page-inner { max-width: 860px; margin: 0 auto; padding: 36px 24px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+    .hist-list { display: flex; flex-direction: column; gap: 10px; }
+    .hist-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; transition: border-color 0.2s; cursor: pointer; }
+    .hist-card:hover { border-color: var(--border2); }
+    .hist-icon { font-size: 22px; width: 40px; height: 40px; background: rgba(123,110,246,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hist-info { flex: 1; }
+    .hist-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+    .hist-meta { font-size: 11px; color: var(--text3); }
+    .hist-score { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+    .hist-badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+    .hb-green { background: rgba(45,212,160,0.1); color: var(--green); }
+    .hb-amber { background: rgba(245,166,35,0.1); color: var(--amber); }
+    .hb-red { background: rgba(240,108,108,0.1); color: var(--red); }
+    .hist-empty { text-align: center; padding: 60px 20px; }
+    .hist-empty .ico { font-size: 48px; opacity: 0.15; margin-bottom: 14px; }
+    .hist-empty p { font-size: 14px; color: var(--text3); margin-bottom: 20px; }
+    .hist-empty button { background: var(--accent); color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+
+    /* TIPS */
+    .tips-no-scan { text-align: center; padding: 60px 20px; }
+    .tips-no-scan .ico { font-size: 48px; opacity: 0.15; margin-bottom: 14px; }
+    .tips-no-scan p { font-size: 14px; color: var(--text3); margin-bottom: 20px; }
+    .tips-no-scan button { background: var(--accent); color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+
+    .resume-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .res-pill { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+    .res-pill:hover { border-color: var(--accent); color: var(--text); }
+    .res-pill.active { background: rgba(123,110,246,0.15); border-color: var(--accent); color: var(--text); }
+
+    .tips-header-band { display: flex; align-items: center; gap: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; }
+    .thb-score-wrap { text-align: center; flex-shrink: 0; }
+    .thb-score { font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 700; line-height: 1; }
+    .thb-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+    .thb-divider { width: 1px; height: 60px; background: var(--border); flex-shrink: 0; }
+    .thb-info { flex: 1; }
+    .thb-filename { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .thb-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+    .thb-chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+
+    .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tip-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; }
+    .tip-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+    .tip-card.priority-high::before { background: var(--red); }
+    .tip-card.priority-med::before { background: var(--amber); }
+    .tip-card.priority-low::before { background: var(--green); }
+    .tip-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .tip-title-row { display: flex; align-items: center; gap: 8px; }
+    .tip-ico { font-size: 18px; }
+    .tip-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; }
+    .tip-badge { font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: 600; letter-spacing: 0.04em; flex-shrink: 0; }
+    .tb-high { background: rgba(240,108,108,0.12); color: var(--red); }
+    .tb-med { background: rgba(245,166,35,0.12); color: var(--amber); }
+    .tb-low { background: rgba(45,212,160,0.12); color: var(--green); }
+    .tip-body { font-size: 12px; color: var(--text2); line-height: 1.7; }
+    .tip-keywords { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+    .tip-kw { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(240,108,108,0.08); color: var(--red); border: 1px solid rgba(240,108,108,0.15); }
+
+    .section-score-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .ss-label { font-size: 10px; color: var(--text3); }
+    .ss-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+    .ss-fill { height: 3px; border-radius: 2px; }
+    .ss-pct { font-size: 10px; color: var(--text3); }
+
+    footer { text-align: center; padding: 24px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
+    @media(max-width:640px){ .grid,.tips-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 28px; } }
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="switchTab('analyze')">
+    <div class="logo-sq">R</div>
+    <span class="logo-name">ResumeAI</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('analyze')">Analyze</button>
+    <button class="nav-tab" onclick="switchTab('history')">History</button>
+    <button class="nav-tab" onclick="switchTab('tips')">Tips</button>
+    <span class="beta">Beta</span>
+  </div>
+</nav>
+
+<!-- ANALYZE -->
+<div class="page active" id="page-analyze">
+  <div class="hero">
+    <div class="hero-pill"><span class="pill-dot"></span> Powered by NLP + AWS Cloud</div>
+    <h1>Smart <em>Resume</em> Analyzer</h1>
+    <p>Upload your resume and paste a job description. Get an instant ATS score, keyword match, and personalized tips.</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-head">Upload Resume</div>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon">📂</div>
+        <h3>Drop your resume here</h3>
+        <p>PDF format · Max 5MB</p>
+        <button class="pick-btn" onclick="document.getElementById('file-inp').click()">Browse file</button>
+        <input type="file" id="file-inp" accept=".pdf" />
+      </div>
+      <div class="file-chip" id="file-chip">
+        <span style="font-size:18px">📄</span>
+        <span class="chip-name" id="chip-name">resume.pdf</span>
+        <span class="chip-rm" onclick="clearFile()">✕</span>
+      </div>
+      <label class="jd-lbl">Job description <span style="color:var(--text3)">(optional — improves keyword match)</span></label>
+      <textarea id="jd" placeholder="Paste the job description here..."></textarea>
+      <button class="go-btn" id="go-btn" onclick="analyze()">Analyze Resume</button>
+    </div>
+    <div class="card">
+      <div class="card-head">Analysis Results</div>
+      <div class="loader" id="loader"><div class="spin"></div><p>Analyzing your resume...</p></div>
+      <div class="empty" id="empty-state">
+        <div class="empty-ico">📊</div>
+        <p>Upload your resume and click <strong>Analyze</strong> to see your ATS score, keyword match, and section breakdown.</p>
+      </div>
+      <div class="results" id="results">
+        <div class="score-band">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 78 78">
+              <circle cx="39" cy="39" r="31" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+              <circle id="ring-arc" cx="39" cy="39" r="31" fill="none" stroke="#7B6EF6" stroke-width="7" stroke-dasharray="195" stroke-dashoffset="195" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-center"><span class="ring-num" id="ring-num">0</span><span class="ring-den">/100</span></div>
+          </div>
+          <div class="score-info"><h2 id="res-label">—</h2><p id="res-desc">—</p></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-lbl">Keywords matched</div><div class="stat-val" id="st-matched" style="color:var(--green)">—</div></div>
+          <div class="stat"><div class="stat-lbl">Missing keywords</div><div class="stat-val" id="st-missing" style="color:var(--red)">—</div></div>
+          <div class="stat"><div class="stat-lbl">Sections detected</div><div class="stat-val" id="st-sections" style="color:var(--blue)">—</div></div>
+          <div class="stat"><div class="stat-lbl">Match mode</div><div class="stat-val" id="st-mode" style="color:var(--amber);font-size:13px;padding-top:4px">—</div></div>
+        </div>
+        <div class="kw-block"><div class="kw-head">Matched keywords</div><div class="tags" id="matched-tags"></div></div>
+        <div class="kw-block"><div class="kw-head">Missing keywords</div><div class="tags" id="missing-tags"></div></div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="page-inner">
+    <h1 class="page-title">Scan history</h1>
+    <p class="page-sub">All resumes analyzed in this session. Click any entry to view its tips.</p>
+    <div class="hist-list" id="hist-list"></div>
+  </div>
+</div>
+
+<!-- TIPS -->
+<div class="page" id="page-tips">
+  <div class="page-inner">
+    <h1 class="page-title">Personalized tips</h1>
+    <p class="page-sub">Tips generated specifically from each resume's weaknesses and missing keywords.</p>
+    <div id="tips-content"></div>
+  </div>
+</div>
+
+<footer>Built with Python · Flask · spaCy · AWS S3 · by Dinesh Kumar</footer>
+
+<script>
+  let selectedFile = null;
+  const scans = [];
+  let activeTipIndex = 0;
+
+  function switchTab(tab, tipIndex) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    ['analyze','history','tips'].forEach((t,i) => {
+      if(t===tab) document.querySelectorAll('.nav-tab')[i].classList.add('active');
+    });
+    if (tab === 'history') renderHistory();
+    if (tab === 'tips') {
+      if (tipIndex !== undefined) activeTipIndex = tipIndex;
+      renderTips();
+    }
+  }
+
+  // FILE
+  const zone = document.getElementById('drop-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); const f=e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') setFile(f); });
+  document.getElementById('file-inp').addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+  function setFile(f) { selectedFile=f; document.getElementById('chip-name').textContent=f.name; document.getElementById('file-chip').classList.add('show'); document.getElementById('drop-zone').style.display='none'; }
+  function clearFile() { selectedFile=null; document.getElementById('file-chip').classList.remove('show'); document.getElementById('drop-zone').style.display='block'; document.getElementById('file-inp').value=''; }
+
+  // ANALYZE
+  async function analyze() {
+    if (!selectedFile) { alert('Please upload a PDF resume first!'); return; }
+    const btn = document.getElementById('go-btn');
+    btn.disabled=true; btn.textContent='Analyzing...';
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('loader').classList.add('show');
+    const fd = new FormData();
+    fd.append('resume', selectedFile);
+    fd.append('job_description', document.getElementById('jd').value);
+    try {
+      const res = await fetch('http://127.0.0.1:5000/analyze', { method:'POST', body:fd });
+      const data = await res.json();
+      if (data.error) { alert('Error: '+data.error); return; }
+      const scan = { ...data, filename: selectedFile.name, date: new Date().toLocaleString(), jd_text: document.getElementById('jd').value };
+      scans.unshift(scan);
+      activeTipIndex = 0;
+      showResults(data);
+    } catch(e) { alert('Cannot connect to server. Make sure Flask is running!'); }
+    finally { document.getElementById('loader').classList.remove('show'); btn.disabled=false; btn.textContent='Analyze Resume'; }
+  }
+
+  function showResults(d) {
+    document.getElementById('results').classList.add('show');
+    const score = d.ats_score;
+    const offset = 195 - (score/100)*195;
+    let color, label, desc;
+    if(score>=85){color='#2DD4A0';label='Excellent!';desc='Your resume is highly ATS-optimized.';}
+    else if(score>=70){color='#7B6EF6';label='Good — room to improve';desc='A few tweaks will push you above 85.';}
+    else if(score>=50){color='#F5A623';label='Average — needs work';desc='Add keywords and metrics to boost your score.';}
+    else{color='#F06C6C';label='Needs improvement';desc='Key sections or keywords are missing.';}
+    setTimeout(()=>{
+      const arc=document.getElementById('ring-arc');
+      arc.style.strokeDashoffset=offset; arc.style.stroke=color;
+      arc.style.transition='stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)';
+      animNum('ring-num',0,score,1000);
+    },100);
+    document.getElementById('res-label').textContent=label;
+    document.getElementById('res-label').style.color=color;
+    document.getElementById('res-desc').textContent=desc;
+    document.getElementById('st-matched').textContent=d.total_keywords_found;
+    document.getElementById('st-missing').textContent=d.missing_keywords.length;
+    document.getElementById('st-sections').textContent=Object.values(d.breakdown).filter(v=>v>0).length+'/6';
+    document.getElementById('st-mode').textContent=d.jd_mode?'JD-based':'Auto-detect';
+    document.getElementById('matched-tags').innerHTML=d.matched_keywords.slice(0,12).map(k=>`<span class="tag tg">${k}</span>`).join('');
+    document.getElementById('missing-tags').innerHTML=d.missing_keywords.slice(0,10).map(k=>`<span class="tag tr">${k}</span>`).join('');
+    const maxMap={contact:10,education:15,experience:20,skills:20,projects:20,certifications:15};
+    document.getElementById('bars').innerHTML=Object.entries(d.breakdown).map(([k,v])=>{
+      const max=maxMap[k]||20; const pct=Math.round((v/max)*100);
+      const bc=pct>=80?'#2DD4A0':pct>=50?'#7B6EF6':'#F5A623';
+      return `<div class="brow"><span class="blbl">${k[0].toUpperCase()+k.slice(1)}</span><div class="btrk"><div class="bfil" style="background:${bc}" data-w="${pct}%"></div></div><span class="bpct">${pct}%</span></div>`;
+    }).join('');
+    setTimeout(()=>{ document.querySelectorAll('.bfil').forEach(b=>b.style.width=b.dataset.w); },200);
+  }
+
+  // HISTORY
+  function renderHistory() {
+    const el = document.getElementById('hist-list');
+    if (!scans.length) {
+      el.innerHTML=`<div class="hist-empty"><div class="ico">🗂️</div><p>No scans yet. Analyze a resume to see your history here.</p><button onclick="switchTab('analyze')">Analyze a resume</button></div>`;
+      return;
+    }
+    el.innerHTML = scans.map((h,i)=>{
+      const s=h.ats_score;
+      const cls=s>=85?'hb-green':s>=60?'hb-amber':'hb-red';
+      const lbl=s>=85?'Excellent':s>=60?'Good':'Needs work';
+      const c=s>=85?'var(--green)':s>=60?'var(--amber)':'var(--red)';
+      return `<div class="hist-card" onclick="switchTab('tips',${i})">
+        <div class="hist-icon">📄</div>
+        <div class="hist-info">
+          <div class="hist-name">${h.filename}</div>
+          <div class="hist-meta">${h.date} · ${h.total_keywords_found} keywords matched · ${h.missing_keywords.length} missing</div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <div class="hist-score" style="color:${c}">${s}</div>
+          <span class="hist-badge ${cls}">${lbl}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // PERSONALIZED TIPS ENGINE
+function generateTips(scan) {
+    const tips = [];
+    const bd = scan.breakdown;
+
+    const expPct = Math.round((bd.experience||0)/20*100);
+    if (expPct < 80) tips.push({
+      id:'experience', priority:'high', ico:'📊',
+      title:'Add measurable impact to experience',
+      body:`Experience section scored ${expPct}%. Add numbers: "processed X records", "reduced time by Y%", "improved accuracy by Z%". Bullet points with metrics rank significantly higher in ATS.`,
+      keywords:[], section:'experience', pct: expPct
+    });
+
+    if (scan.missing_keywords && scan.missing_keywords.length > 0) tips.push({
+      id:'missing_keywords', priority:'high', ico:'🔑',
+      title:'Add missing keywords to Skills section',
+      body:`Resume is missing ${scan.missing_keywords.length} keywords ATS systems scan for. Add the ones you know explicitly in your Skills section.`,
+      keywords: scan.missing_keywords.slice(0,8),
+      section:'skills', pct: Math.round((bd.skills||0)/20*100)
+    });
+
+    const contactPct = Math.round((bd.contact||0)/10*100);
+    if (contactPct < 100) tips.push({
+      id:'contact', priority: contactPct < 70 ? 'high' : 'med', ico:'🔗',
+      title:'Complete your contact section',
+      body:`Contact scored ${contactPct}%. Ensure you have: email, phone, LinkedIn URL, and a GitHub profile link. Missing any reduces ATS parse confidence.`,
+      keywords:[], section:'contact', pct: contactPct
+    });
+
+    const projPct = Math.round((bd.projects||0)/20*100);
+    if (projPct < 80) tips.push({
+      id:'projects', priority:'med', ico:'🚀',
+      title:'Strengthen your projects section',
+      body:`Projects scored ${projPct}%. Each project needs: problem solved, technologies explicitly named, and a measurable outcome or deployment detail like "deployed on AWS EC2".`,
+      keywords:[], section:'projects', pct: projPct
+    });
+
+    const certPct = Math.round((bd.certifications||0)/15*100);
+    if (certPct < 70) tips.push({
+      id:'certifications', priority:'med', ico:'🏅',
+      title:'Add certifications with dates',
+      body:`Certifications scored ${certPct}%. Include full certification name and month/year obtained. Cloud and AI certs are especially valued for tech roles.`,
+      keywords:[], section:'certifications', pct: certPct
+    });
+
+    const eduPct = Math.round((bd.education||0)/15*100);
+    if (eduPct < 80) tips.push({
+      id:'education', priority:'low', ico:'🎓',
+      title:'Improve education section clarity',
+      body:`Education scored ${eduPct}%. Include: full degree name, university, graduation year, and CGPA. Avoid abbreviations — ATS needs structured data.`,
+      keywords:[], section:'education', pct: eduPct
+    });
+
+    if (scan.jd_mode) {
+      const matchPct = Math.round((scan.total_keywords_found/(scan.total_keywords_possible||1))*100);
+      if (matchPct < 70) tips.push({
+        id:'jd_match', priority:'high', ico:'🎯',
+        title:'Low keyword match with job description',
+        body:`You matched ${matchPct}% of JD keywords. Tailor your resume by incorporating missing keywords naturally into experience and skills bullets.`,
+        keywords: scan.missing_keywords.slice(0,6),
+        section:null, pct: matchPct
+      });
+    }
+
+    if (scan.ats_score >= 85) tips.push({
+      id:'excellence', priority:'low', ico:'✨',
+      title:'Push from good to outstanding',
+      body:`Score of ${scan.ats_score} is strong. To reach 95+: add a GitHub link with live projects, quantify every experience bullet, and tailor the objective per role.`,
+      keywords:[], section:null, pct:null
+    });
+
+    return tips;
+  }
+
+  function checkIfFixed(tipId, oldScan, newScan) {
+    if (!newScan) return null;
+    const oldBd = oldScan.breakdown;
+    const newBd = newScan.breakdown;
+    switch(tipId) {
+      case 'experience':
+        return Math.round((newBd.experience||0)/20*100) >= 80;
+      case 'missing_keywords':
+        return newScan.missing_keywords.length < oldScan.missing_keywords.length * 0.5;
+      case 'contact':
+        return Math.round((newBd.contact||0)/10*100) >= 100;
+      case 'projects':
+        return Math.round((newBd.projects||0)/20*100) >= 80;
+      case 'certifications':
+        return Math.round((newBd.certifications||0)/15*100) >= 70;
+      case 'education':
+        return Math.round((newBd.education||0)/15*100) >= 80;
+      case 'jd_match':
+        return Math.round((newScan.total_keywords_found/(newScan.total_keywords_possible||1))*100) >= 70;
+      case 'excellence':
+        return newScan.ats_score >= 95;
+      default: return null;
+    }
+  }
+
+  function renderTips() {
+    const el = document.getElementById('tips-content');
+
+    if (!scans.length) {
+      el.innerHTML=`<div class="tips-no-scan"><div class="ico">💡</div><p>Analyze a resume first to get personalized tips based on its actual weaknesses.</p><button onclick="switchTab('analyze')">Analyze a resume</button></div>`;
+      return;
+    }
+
+    const pillsHTML = scans.map((s,i) =>
+      `<button class="res-pill ${i===activeTipIndex?'active':''}" onclick="selectResume(${i})">${s.filename.replace('.pdf','')} · ${s.ats_score}</button>`
+    ).join('');
+
+    const scan = scans[activeTipIndex];
+    // find next scan of same or similar file for comparison
+    const prevScan = scans[activeTipIndex + 1] || null;
+    const tips = generateTips(scan);
+    const score = scan.ats_score;
+    const scoreColor = score>=85?'var(--green)':score>=70?'var(--accent)':score>=50?'var(--amber)':'var(--red)';
+    const scoreLabel = score>=85?'Excellent':score>=70?'Good':score>=50?'Average':'Needs work';
+    const scoreBadgeClass = score>=85?'tb-low':score>=70?'tb-med':'tb-high';
+
+    // TIPS with fix tracker
+    const tipsHTML = tips.map(tip => {
+      const isFixed = checkIfFixed(tip.id, scan, prevScan !== scan ? null : null);
+      // Check against NEXT newer scan if viewing an older scan
+      const newerScan = activeTipIndex > 0 ? scans[activeTipIndex - 1] : null;
+      const fixed = checkIfFixed(tip.id, scan, newerScan);
+      const pColor = tip.priority==='high'?'var(--red)':tip.priority==='med'?'var(--amber)':'var(--green)';
+      const pLabel = tip.priority==='high'?'HIGH PRIORITY':tip.priority==='med'?'MEDIUM':'GOOD TO HAVE';
+      const pClass = tip.priority==='high'?'tb-high':tip.priority==='med'?'tb-med':'tb-low';
+      const kwHTML = tip.keywords.length
+        ? `<div class="tip-keywords">${tip.keywords.map(k=>`<span class="tip-kw">${k}</span>`).join('')}</div>` : '';
+      const barHTML = tip.section && tip.pct !== null
+        ? `<div class="section-score-row"><span class="ss-label">${tip.section} score</span><div class="ss-bar"><div class="ss-fill" style="width:${tip.pct}%;background:${pColor}"></div></div><span class="ss-pct">${tip.pct}%</span></div>` : '';
+      const fixedBanner = fixed === true
+        ? `<div class="fix-status fix-done">✓ Fixed in latest version</div>`
+        : fixed === false
+        ? `<div class="fix-status fix-pending">Still pending in latest version</div>`
+        : '';
+      return `<div class="tip-card priority-${tip.priority} ${fixed===true?'tip-fixed':''}">
+        <div class="tip-top">
+          <div class="tip-title-row"><span class="tip-ico">${tip.ico}</span><span class="tip-title">${tip.title}</span></div>
+          <span class="tip-badge ${pClass}">${pLabel}</span>
+        </div>
+        ${fixedBanner}
+        <div class="tip-body">${tip.body}</div>
+        ${kwHTML}${barHTML}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="resume-selector">${pillsHTML}</div>
+      <div class="tips-header-band">
+        <div class="thb-score-wrap">
+          <div class="thb-score" style="color:${scoreColor}">${score}</div>
+          <div class="thb-label">ATS score</div>
+        </div>
+        <div class="thb-divider"></div>
+        <div class="thb-info">
+          <div class="thb-filename">${scan.filename}</div>
+          <div class="thb-meta">
+            <span class="thb-chip ${scoreBadgeClass}">${scoreLabel}</span>
+            <span class="thb-chip" style="background:rgba(91,164,245,0.1);color:var(--blue)">${scan.total_keywords_found} matched</span>
+            <span class="thb-chip" style="background:rgba(240,108,108,0.1);color:var(--red)">${scan.missing_keywords.length} missing</span>
+            <span class="thb-chip" style="background:rgba(255,255,255,0.05);color:var(--text2)">${scan.jd_mode?'JD-based':'Auto-detect'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="tips-grid">${tipsHTML}</div>`;
+  }
+
+  function selectResume(i) {
+    activeTipIndex = i;
+    renderTips();
+  }
+
+  function animNum(id,from,to,dur) {
+    const el=document.getElementById(id); const t0=performance.now();
+    function tick(t){ const p=Math.min((t-t0)/dur,1); el.textContent=Math.round(from+(to-from)*p); if(p<1) requestAnimationFrame(tick); }
+    requestAnimationFrame(tick);
+  }
+</script>
+</body>
+</html>
