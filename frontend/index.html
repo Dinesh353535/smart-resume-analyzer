@@ -295,7 +295,7 @@
     fd.append('resume', selectedFile);
     fd.append('job_description', document.getElementById('jd').value);
     try {
-      const res = await fetch(http://54.196.157.238:5000, { method:'POST', body:fd });
+      const res = await fetch('http://54.196.157.238:5000/analyze', { method:'POST', body:fd });
       const data = await res.json();
       if (data.error) { alert('Error: '+data.error); return; }
       const scan = { ...data, filename: selectedFile.name, date: new Date().toLocaleString(), jd_text: document.getElementById('jd').value };
